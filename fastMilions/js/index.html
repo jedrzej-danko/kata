@@ -1,0 +1,143 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8"> 
+    <style>
+        #output span {display: block}
+    </style>
+</head>
+<body>
+<p>
+    Kata: <a href="https://szkopul.edu.pl/problemset/problem/fm/site/">FastMilions</a>
+</p> 
+<textarea id="input">8
+p
+d akcje 4 
+d zloto 3 
+d obligacje 4 
+d akcje 4
+p
+u
+p</textarea>
+<button id="start">Start</button>
+<pre id="output">
+
+</div>
+<script>
+    function Output(outputId)
+    {
+        const outputArea = document.getElementById(outputId);
+        outputArea.innerHTML = '';
+        return {
+            write : (msg) => {
+                let line = document.createElement('span');
+                let m = document.createTextNode(msg);
+                line.appendChild(m);
+                outputArea.appendChild(line);
+            }
+        }
+    }
+    function Input(inputId) 
+    {
+        const inputArea = document.getElementById(inputId);
+        return {
+            get : () => { return inputArea.value },
+            lines : () => inputArea.value.split('\n')
+        }
+    }
+    function FastMilions(input, output)
+    {
+        let repository = new (function() {
+            let r = {};
+            const maxReturn = () => {
+                let max = 0;
+                for (let type in r) {
+                    if (Array.isArray(r[type])) {
+                        let typeMax = Math.max(r[type]);
+                        if (typeMax > max) {
+                            max = typeMax;
+                        }
+                    }
+                }
+                return max;
+            }
+            return {
+                add : (type, amount) => {
+                    if (!r.hasOwnProperty(type)) {
+                        r[type] = []
+                    }
+                    r[type].push(amount);
+                },
+                count : () => {
+                    let count = 0;
+                    for (let type in r) {
+                        if (Array.isArray(r[type])) {
+                            count += r[type].length;
+                        }
+                    }
+                    return count;
+                },
+                max : () => maxReturn(),
+                removeValues : (value) => {
+                    let removedTypes = [];
+                    for (let type in r) {
+                        if (!Array.isArray(r[type])) {
+                            continue;
+                        }
+                        let leftOver = [];
+                        for (let i = 0; i < r[type].length; i++) {
+                            if (r[type][i] === value) {
+                                removedTypes.push(type)
+                            } else {
+                                leftOver.push(r[type][i]);
+                            }
+                        }
+                        r[type] = leftOver;
+                    }
+                    removedTypes.sort();
+                    removedTypes.reverse();
+                    return removedTypes;
+                }
+            }
+        })
+        const inputLines = input.lines();
+        const numberOfLines = parseInt(inputLines[0]);        
+        if (isNaN(numberOfLines)) {
+            output.write('Undefined number of lines, exiting');
+            return 1;
+        }        
+        output.write('Number of lines ' + numberOfLines);
+        for (let i = 1; i <= numberOfLines; i++) {
+            let operation = inputLines[i].charAt(0);
+            switch (operation) {
+                case 'p':
+                    if (!repository.count()) {
+                        output.write(`O${i}: Brak mozliwych inwestycji`);
+                        break;
+                    }
+                    let maxValue = repository.max();
+                    let removedTypes = repository.removeValues(maxValue);
+                    output.write(`O${i}: Najlepsze inwestycje: ${maxValue} ${removedTypes.join(' ')}`);
+                    break;
+                case 'd':
+                    let details = inputLines[i].split(' ');
+                    let amount = parseInt(details[2]);
+                    if (isNaN(amount)) {
+                        output.write(`Wrong amount in line ${i}: ${details[2]}`);
+                        break;
+                    }
+                    repository.add(details[1], amount);
+                    output.write(`O${i}: Dodaj ${details[1]} wartosc: ${amount}`);                    
+                    break;
+                default:
+                    output.write(`O${i}: Złe polecenie`);
+            }
+            output.write(`Liczba inwestycji: ${repository.count()}`);
+        }
+    }
+
+    document.getElementById('start').addEventListener('click', () => {
+        FastMilions(new Input('input'), new Output('output'));
+    })
+</script> 
+</body>
+</html>
